@@ -7,7 +7,20 @@ import AuthContext, { AuthProvider } from "./components/AuthContext";
 import { Outlet } from "react-router-dom";
 
 const PrivateRoute = (path) => {
-  if (path.uri === "/login" || path.uri === "/register") {
+  const UnauthorizedPath = [
+    "/login",
+    "register",
+    "/adminstration_portal",
+  ]
+
+  let res = false;
+  for (let i=0; i < UnauthorizedPath.length; i++){
+    if (UnauthorizedPath[i] === path.uri){
+      res = true;
+    }
+  }
+
+  if (res) {
     const user = path.stauts.user;
     console.log(user);
     if (user !== null){

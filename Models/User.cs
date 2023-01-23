@@ -15,5 +15,6 @@
         public string RefreshToken { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateExpires { get; set; }
+        public bool SuperUser  {get; set; }
     }
 }

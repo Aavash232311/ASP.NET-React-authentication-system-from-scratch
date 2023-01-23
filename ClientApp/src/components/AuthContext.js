@@ -53,10 +53,16 @@ export const AuthProvider = ({ children }) => {
           });
       }, 540000);
       setUser(true);
-      return true;
+      return {
+        status: true,
+        value: null
+      };
     }
     setUser(false);
-    return false;
+    return {
+      status: false,
+      value: data.value,
+    };
   };
 
   let methods = {

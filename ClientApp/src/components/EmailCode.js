@@ -17,11 +17,11 @@ export class EmailCode extends Component {
       const userCode = parseInt(ev.target.value);
       fetch("https://localhost:7178/email/", {
         method: "post",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-XSRF-TOKEN": this.utils.CSRF("XSRF-TOKEN"),
         },
-        crossorigin: true,
         body: JSON.stringify({
             Email: this.userEmail,
             Code: userCode,
@@ -29,6 +29,7 @@ export class EmailCode extends Component {
       }).then(rsp => rsp.json()).then((response) => {
         if (response === true){
           ev.target.value = "";
+          window.location.href = "/login";
         }else{
           alert("Code is incorrect");
           ev.target.value = "";

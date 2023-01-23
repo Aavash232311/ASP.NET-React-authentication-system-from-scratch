@@ -34,9 +34,9 @@ export class Login extends Component {
                 value
                   .logIn(this.state.Username, this.state.Password)
                   .then((rsp) => {
-                    if (rsp !== true){
+                    if (rsp.status !== true){
                       this.setState({renderLoginError: true});
-                      this.setState({loginErrorMessageLog: "Username or password incorrect"});
+                      this.setState({loginErrorMessageLog: rsp.value});
                     }else{
                       window.location.href = "/";
                     }

@@ -1,0 +1,8 @@
+{
+"SpaProxyServer": {
+"ServerUrl": "https://localhost:44461",
+"LaunchCommand": "npm start",
+"WorkingDirectory": "C:\\Users\\aavas\\source\\repos\\Engineer\\Engineer\\ClientApp\\",
+"MaxTimeoutInSeconds": "120"
+}
+}

@@ -25,18 +25,18 @@ namespace Engineer.Controllers
 
     public class Login
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 
     public class UserRequestHdneler
     {
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string Address { get; set; }
-        public string Username { get; set; }
-        public string ConformPaaword { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string ConformPaaword { get; set; } = string.Empty;
     }
 
     public class UserResponseRegister
@@ -74,7 +74,8 @@ namespace Engineer.Controllers
         }
 
         [HttpPost]
-         [ValidateAntiForgeryToken]
+        [Route("Register")]
+        [ValidateAntiForgeryToken]
         [Consumes("application/json")]
         public async Task<IActionResult> Post(UserRequestHdneler model)
         {
@@ -111,7 +112,8 @@ namespace Engineer.Controllers
                 Name = model.Name,
                 OnTimePassword = code,
                 JoinedDate = DateTime.Now,
-                RefreshToken = string.Empty
+                RefreshToken = string.Empty,
+                SuperUser = false,
             };
 
             var res = new UserResponseRegister()
@@ -119,48 +121,55 @@ namespace Engineer.Controllers
                 Email = model.Email
             };
 
-         /*   await _context.Users.AddAsync(newUser);
-            await _context.SaveChangesAsync();*/
+            await _context.Users.AddAsync(newUser);
+            await _context.SaveChangesAsync();
 
 
-            //    var email = new MimeMessage();
-            //     email.From.Add(MailboxAddress.Parse("aavash3150@gmail.com"));
-            //     email.To.Add(MailboxAddress.Parse(model.Email));
-            //     email.Subject = "Email verification";
-            //     email.Body = new TextPart(TextFormat.Html)
-            //     {
-            //         Text = $"Hi we would like to comform your login your code is: {code}"
-            //     };
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse("aavash3150@gmail.com"));
+            email.To.Add(MailboxAddress.Parse(model.Email));
+            email.Subject = "Email verification";
+            email.Body = new TextPart(TextFormat.Html)
+            {
+                Text = $"Hi we would like to comform your login your code is: {code}"
+            };
 
-            //     using var smtp = new SmtpClient();
-            //     smtp.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-            //     smtp.Authenticate("aavash3150@gmail.com", "");
-            //     smtp.Send(email);
-            //     smtp.Disconnect(true);
+            using var smtp = new SmtpClient();
+            smtp.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+            smtp.Authenticate("aavash3150@gmail.com", "");
+            smtp.Send(email);
+            smtp.Disconnect(true);
             return new JsonResult(Ok(res));
         }
 
         [HttpPost]
-         [ValidateAntiForgeryToken]
+        [ValidateAntiForgeryToken]
         [Route("login")]
         public async Task<IActionResult> Post(Login cred)
         {
             string username = cred.Username;
             var user = _context.Users.Where(x => x.Username == username).FirstOrDefault();
+
             if (user == null)
             {
                 return new JsonResult(BadRequest("Username or password is incorrect"));
             }
 
+            if (user.IsActive == false)
+            {
+                return new JsonResult(BadRequest("Pelase verify your email to continure login"));
+            }
+
             bool isAuthenticated = Authenticate(cred.Password, user.Password, user.Salt);
+
+            if (user.SuperUser == true){
+                return new JsonResult(BadRequest("You don't belong here"));
+            }
 
             if (isAuthenticated == false)
             {
                 return new JsonResult(BadRequest("Username or password is incorrect"));
             }
-
-            var resp = new HttpResponseMessage();
-
 
             string assignJwt = CreateToken(user);
             // random token with assign and expirey date
@@ -325,6 +334,42 @@ namespace Engineer.Controllers
         public IActionResult Initial()
         {
             return Ok();
+        }
+
+        // admin login portal 
+        [HttpPost]
+        [Route("AdminLoginPortal")]
+        public async Task<IActionResult> AdminPortalLogin(Login cred)
+        {
+            string Username = cred.Username;
+            string Password = cred.Password;
+            var user = _context.Users.Where(x => x.Username == Username).FirstOrDefault();
+            if (user == null)
+            {
+                return NotFound("Username or password incorrect");
+            }
+            if (user.IsActive == false){
+                return BadRequest("You're not verified");
+            }
+            if (user.SuperUser == true)
+            {
+                bool isAuthenticated = Authenticate(Password, user.Password, user.Salt);
+                if (isAuthenticated == false)
+                {
+                    return NotFound("Username or password not found");
+                }
+                string assignJwt = CreateToken(user);
+                // random token with assign and expirey date
+                var refreshToken = GenerateToken();
+                // assign token to http only cookie and save it in user record
+                AssignHttpOnlyCookie(refreshToken, out RefreshToken RefreshTokenInfo);
+                user.RefreshToken = RefreshTokenInfo.Token;
+                user.DateCreated = RefreshTokenInfo.Date;
+                user.DateExpires = RefreshTokenInfo.BlackListDate;
+                await _context.SaveChangesAsync();
+                return new JsonResult(Ok(assignJwt));
+            }
+            return BadRequest("Newwork error");
         }
     }
 }

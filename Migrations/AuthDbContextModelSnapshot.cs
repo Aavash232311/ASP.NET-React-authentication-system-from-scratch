@@ -67,6 +67,9 @@ namespace Engineer.Migrations
                         .IsRequired()
                         .HasColumnType("varbinary(max)");
 
+                    b.Property<bool>("SuperUser")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

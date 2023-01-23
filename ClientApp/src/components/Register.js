@@ -45,15 +45,14 @@ export class Register extends Component {
   async handleSubmit(event) {
     event.preventDefault();
     const data = JSON.stringify(this.state);
-    const token = this.getCookie("XSRF-TOKEN");
 
-    const result = await fetch("https://localhost:7178/item/", {
+    const result = await fetch("https://localhost:7178/item/Register", {
       method: "post",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-          "X-XSRF-TOKEN": token,
+        "X-XSRF-TOKEN": this.utils.CSRF("XSRF-TOKEN"),
       },
-      crossorigin: true,
       body: data,
     })
       .then((rsp) => rsp.json())

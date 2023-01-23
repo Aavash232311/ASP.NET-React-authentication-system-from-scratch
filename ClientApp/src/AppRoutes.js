@@ -3,6 +3,7 @@ import { Register } from "./components/Register";
 import {EmailCode} from "./components/EmailCode";
 import { Home } from "./components/Home";
 import {Login } from "./components/Login";
+import {AdminLogin} from "./components/Admin/AdminLogin";
 
 const AppRoutes = [
   {
@@ -24,6 +25,10 @@ const AppRoutes = [
   {
     path: "/login",
     element: <Login />
+  },
+  {
+    path: "/adminstration_portal",
+    element: <AdminLogin />
   }
 ];
 
