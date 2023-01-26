@@ -6,8 +6,8 @@ using MailKit.Security;
 using MimeKit.Text;
 using MailKit.Net.Smtp;
 using System.Security.Cryptography;
-using System;
 using Engineer.Data;
+using System;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Utilities;
 using System.Security.Claims;
@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Net.Http.Headers;
+using Engineer.Helper;
 
 namespace Engineer.Controllers
 {
@@ -162,7 +164,8 @@ namespace Engineer.Controllers
 
             bool isAuthenticated = Authenticate(cred.Password, user.Password, user.Salt);
 
-            if (user.SuperUser == true){
+            if (user.SuperUser == true)
+            {
                 return new JsonResult(BadRequest("You don't belong here"));
             }
 
@@ -292,6 +295,14 @@ namespace Engineer.Controllers
             token = tokenObject;
         }
 
+        [HttpPost]
+        [Route("check")]
+        public async Task<IActionResult> CheckToken(SingleString token)
+        {
+            Tool.ValidateJWT(Request.Headers["Authorization"], out bool status);
+            return new JsonResult(Ok(status));
+        }
+
         [HttpGet]
         [Route("RefreshToken")]
         [Authorize]
@@ -336,6 +347,7 @@ namespace Engineer.Controllers
             return Ok();
         }
 
+
         // admin login portal 
         [HttpPost]
         [Route("AdminLoginPortal")]
@@ -346,9 +358,10 @@ namespace Engineer.Controllers
             var user = _context.Users.Where(x => x.Username == Username).FirstOrDefault();
             if (user == null)
             {
-                return NotFound("Username or password incorrect");
+                return new JsonResult(BadRequest("Problem with DNS server"));
             }
-            if (user.IsActive == false){
+            if (user.IsActive == false)
+            {
                 return BadRequest("You're not verified");
             }
             if (user.SuperUser == true)
@@ -356,7 +369,7 @@ namespace Engineer.Controllers
                 bool isAuthenticated = Authenticate(Password, user.Password, user.Salt);
                 if (isAuthenticated == false)
                 {
-                    return NotFound("Username or password not found");
+                    return new JsonResult(BadRequest("Problem with DNS server"));
                 }
                 string assignJwt = CreateToken(user);
                 // random token with assign and expirey date
@@ -369,7 +382,7 @@ namespace Engineer.Controllers
                 await _context.SaveChangesAsync();
                 return new JsonResult(Ok(assignJwt));
             }
-            return BadRequest("Newwork error");
+            return new JsonResult(BadRequest("Newwork error"));
         }
     }
 }

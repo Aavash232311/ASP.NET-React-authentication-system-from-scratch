@@ -4,6 +4,7 @@ import {EmailCode} from "./components/EmailCode";
 import { Home } from "./components/Home";
 import {Login } from "./components/Login";
 import {AdminLogin} from "./components/Admin/AdminLogin";
+import {Admin} from "./components/Admin/AdminDasdboard";
 
 const AppRoutes = [
   {
@@ -29,6 +30,10 @@ const AppRoutes = [
   {
     path: "/adminstration_portal",
     element: <AdminLogin />
+  },
+  {
+    path: "/adminstrationPortal",
+    element: <Admin />
   }
 ];
 

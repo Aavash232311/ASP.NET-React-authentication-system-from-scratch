@@ -5,8 +5,25 @@ import { Layout } from "./components/Layout";
 import "./custom.css";
 import AuthContext, { AuthProvider } from "./components/AuthContext";
 import { Outlet } from "react-router-dom";
+import {Forbidden} from "./components/Forbidden"
 
 const PrivateRoute = (path) => {
+  console.log(path.uri, path.stauts.user);
+
+  const AuthorizedPath = [
+    "/adminstrationPortal"
+  ]
+  // protect admin route UI
+  
+
+  if (path.stauts.user === null){
+    for (let i =0; i < AuthorizedPath.length; i++){
+      if (AuthorizedPath[i] === path.uri){
+        return <Forbidden />
+      }
+    }
+  }
+
   const UnauthorizedPath = [
     "/login",
     "register",
