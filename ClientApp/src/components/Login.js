@@ -34,10 +34,13 @@ export class Login extends Component {
                 value
                   .logIn(this.state.Username, this.state.Password)
                   .then((rsp) => {
+                    console.log(rsp);
                     if (rsp.status !== true){
                       this.setState({renderLoginError: true});
-                      this.setState({loginErrorMessageLog: rsp.value});
-                    }else{
+                      this.setState({loginErrorMessageLog: rsp.err});
+                    }
+                    
+                    if (rsp.status === true){
                       window.location.href = "/";
                     }
                   });

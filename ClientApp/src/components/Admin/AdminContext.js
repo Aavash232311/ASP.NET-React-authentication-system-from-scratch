@@ -33,25 +33,25 @@ export const AdminProvider = ({ children }) => {
       status = false;
     } else {
       localStorage.setItem("authToken", data.value);
-      setInterval(() => {
-        fetch("https://localhost:7178/item/RefreshToken/", {
-          method: "get",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + authToken,
-          },
-        })
-          .then((rsp) => rsp.json())
-          .then((response) => {
-            if (response.statusCode === 200) {
-              localStorage.setItem("authToken", response.value);
+      // setInterval(() => {
+      //   fetch("https://localhost:7178/item/RefreshToken/", {
+      //     method: "get",
+      //     credentials: "include",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       Authorization: "Bearer " + authToken,
+      //     },
+      //   })
+      //     .then((rsp) => rsp.json())
+      //     .then((response) => {
+      //       if (response.statusCode === 200) {
+      //         localStorage.setItem("authToken", response.value);
               
-            } else {
-              logOut();
-            }
-          });
-      }, 540000);
+      //       } else {
+      //         logOut();
+      //       }
+      //     });
+      // }, 540000);
     }
     return { status: status, err: data.value };
   };

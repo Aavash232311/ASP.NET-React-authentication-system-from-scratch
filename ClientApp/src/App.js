@@ -5,45 +5,22 @@ import { Layout } from "./components/Layout";
 import "./custom.css";
 import AuthContext, { AuthProvider } from "./components/AuthContext";
 import { Outlet } from "react-router-dom";
-import {Forbidden} from "./components/Forbidden"
+import { Forbidden } from "./components/Forbidden";
+import { NavItem } from "reactstrap";
 
 const PrivateRoute = (path) => {
-  console.log(path.uri, path.stauts.user);
-
-  const AuthorizedPath = [
-    "/adminstrationPortal"
-  ]
-  // protect admin route UI
-  
-
-  if (path.stauts.user === null){
-    for (let i =0; i < AuthorizedPath.length; i++){
-      if (AuthorizedPath[i] === path.uri){
-        return <Forbidden />
-      }
-    }
+  const currentPath = path.uri;
+  if (currentPath === undefined){
+    return <Outlet />
   }
 
   const UnauthorizedPath = [
-    "/login",
-    "register",
-    "/adminstration_portal",
+    "/login", "/register"
   ]
 
-  let res = false;
-  for (let i=0; i < UnauthorizedPath.length; i++){
-    if (UnauthorizedPath[i] === path.uri){
-      res = true;
-    }
-  }
+  // validate web token in real time
 
-  if (res) {
-    const user = path.stauts.user;
-    console.log(user);
-    if (user !== null){
-      window.location.href = "/";
-    }
-  }
+  console.log(currentPath);
   return <Outlet />;
 };
 
@@ -55,16 +32,46 @@ export default class App extends Component {
       <AuthProvider>
         <AuthContext.Consumer>
           {(data) => {
+            const token = localStorage.getItem("authToken");
+            const setToken = () => {
+              fetch("https://localhost:7178/item/RefreshToken/", {
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization:
+                    "Bearer " + token,
+                },
+              })
+                .then((rsp) => rsp.json())
+                .then((response) => {
+                  if (response.statusCode === 200) {
+                    localStorage.setItem("authToken", response.value);
+                  } else {
+                    localStorage.removeItem("authToken")
+                  }
+                });
+            }
+
+            if (token !== null) {
+              setToken();
+              setInterval(() => {
+                setToken();
+              }, 540000);
+            }
             return (
               <div>
                 <Layout>
                   <Routes>
                     {AppRoutes.map((route, index) => {
                       const { element, ...rest } = route;
+                      console.log(route);
                       return (
                         <Route
                           key={index + "haa"}
-                          element={<PrivateRoute uri={route.path} stauts={data} />}>
+                          element={
+                            <PrivateRoute uri={route.path} stauts={data} />
+                          }
+                        >
                           <Route key={index} {...rest} element={element} />
                         </Route>
                       );

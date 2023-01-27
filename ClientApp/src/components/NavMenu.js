@@ -19,6 +19,7 @@ export class NavMenu extends Component {
     this.toggleNavbar = this.toggleNavbar.bind(this);
     this.state = {
       collapsed: true,
+      user: false,
     };
   }
 
@@ -33,7 +34,10 @@ export class NavMenu extends Component {
       <AuthProvider>
         <AuthContext.Consumer>
           {(value) => {
-            const user = value.user;
+            let user = false;
+            if (value.user !== null){
+              user = true;
+            }
             return (
               <header>
                 <Navbar
@@ -64,7 +68,11 @@ export class NavMenu extends Component {
 
                       <div style={{ display: user ? "none" : "block" }}>
                         <NavItem>
-                          <NavLink tag={Link}className="text-dark"to="/register">
+                          <NavLink
+                            tag={Link}
+                            className="text-dark"
+                            to="/register"
+                          >
                             Register
                           </NavLink>
                         </NavItem>
@@ -75,7 +83,7 @@ export class NavMenu extends Component {
                         </NavItem>
                       </div>
 
-                      <div style={{ display: user ? "block" : "none" }}>
+                      <div style={{ display:  user ? "block" : "none" }}>
                         <NavItem onClick={value.logOut}>
                           <NavLink tag={Link} className="text-dark" to="/login">
                             Logout

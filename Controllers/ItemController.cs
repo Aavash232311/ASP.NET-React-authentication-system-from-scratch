@@ -1,25 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Engineer.Models;
-using System.Web.Helpers;
 using MimeKit;
 using MailKit.Security;
 using MimeKit.Text;
 using MailKit.Net.Smtp;
 using System.Security.Cryptography;
 using Engineer.Data;
-using System;
-using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Utilities;
 using System.Security.Claims;
-using System.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json.Linq;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Net.Http.Headers;
 using Engineer.Helper;
 
 namespace Engineer.Controllers
@@ -178,6 +167,7 @@ namespace Engineer.Controllers
             // random token with assign and expirey date
             var refreshToken = GenerateToken();
             // assign token to http only cookie and save it in user record
+            Console.WriteLine("ASSIGNED TOKEN " + refreshToken);
             AssignHttpOnlyCookie(refreshToken, out RefreshToken RefreshTokenInfo);
             user.RefreshToken = RefreshTokenInfo.Token;
             user.DateCreated = RefreshTokenInfo.Date;
@@ -295,9 +285,9 @@ namespace Engineer.Controllers
             token = tokenObject;
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("check")]
-        public async Task<IActionResult> CheckToken(SingleString token)
+        public async Task<IActionResult> CheckToken()
         {
             Tool.ValidateJWT(Request.Headers["Authorization"], out bool status);
             return new JsonResult(Ok(status));
@@ -305,37 +295,29 @@ namespace Engineer.Controllers
 
         [HttpGet]
         [Route("RefreshToken")]
-        [Authorize]
         public async Task<IActionResult> WhiteListToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            Console.WriteLine("Cookie NOT WORKING" + refreshToken);
             var User = _context.Users.Where(x => x.RefreshToken == refreshToken).FirstOrDefault();
             if (User == null)
             {
-                Console.WriteLine("NULL " + refreshToken);
-                return Unauthorized("Illegal request made");
+                return Ok();
             }
             if (!User.RefreshToken.Equals(refreshToken))
             {
-                return Unauthorized("Illegal request made");
+                return Ok();
             }
             else if (User.DateExpires < DateTime.Now)
             {
-                return Unauthorized("Token expired.");
+                return Ok();
             }
 
             string accessToken = CreateToken(User);
-            // random token with assign and expirey date
             var newRefreshToken = GenerateToken();
-
-
-            // assign token to http only cookie and save it in user record
+            User.RefreshToken = newRefreshToken.Token;
+            User.DateCreated = newRefreshToken.Date;
+            User.DateExpires = newRefreshToken.BlackListDate;
             AssignHttpOnlyCookie(newRefreshToken, out RefreshToken RefreshTokenInfo);
-            User.RefreshToken = RefreshTokenInfo.Token;
-            User.DateCreated = RefreshTokenInfo.Date;
-            User.DateExpires = RefreshTokenInfo.BlackListDate;
-
             await _context.SaveChangesAsync();
             return new JsonResult(Ok(accessToken));
         }
