@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Engineer.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class MyFirstMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,7 +27,10 @@ namespace Engineer.Migrations
                     JoinedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DateExpires = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    DateExpires = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SuperUser = table.Column<bool>(type: "bit", nullable: false),
+                    LockToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Locked = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

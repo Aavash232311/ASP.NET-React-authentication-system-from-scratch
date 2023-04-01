@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Engineer.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20230118174414_InitialCreates")]
-    partial class InitialCreates
+    [Migration("20230207151831_MyFirstMigration")]
+    partial class MyFirstMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,6 +51,13 @@ namespace Engineer.Migrations
                     b.Property<DateTime>("JoinedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LockToken")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -69,6 +76,9 @@ namespace Engineer.Migrations
                     b.Property<byte[]>("Salt")
                         .IsRequired()
                         .HasColumnType("varbinary(max)");
+
+                    b.Property<bool>("SuperUser")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Username")
                         .IsRequired()

@@ -16,5 +16,7 @@
         public DateTime DateCreated { get; set; }
         public DateTime DateExpires { get; set; }
         public bool SuperUser  {get; set; }
+        public string LockToken {get; set;}
+        public bool Locked {get; set; }
     }
 }

@@ -10,21 +10,20 @@ export class Utility {
   GetDomainBase() {
     return "https://localhost:7178/";
   }
-  CSRF(name) {
-    let cookieValue = null;
 
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
+  ClientHostBase(){
+    return "https://localhost:44461/";
   }
+  CSRF(name) {
+    function getCookieValue(name) {
+      // Search for the cookie name followed by an equals sign
+      var regex = new RegExp("(?:(?:^|.*;)\\s*" + name + "\\s*\\=\\s*([^;]*).*$)|^.*$");
+      var cookieValue = document.cookie.replace(regex, "$1");
+      return cookieValue;
+    }
+    return getCookieValue(name);
+  }
+  
   AccessToken() {
     return localStorage.getItem("authToken");
   }

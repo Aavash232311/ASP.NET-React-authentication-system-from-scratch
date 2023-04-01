@@ -10,6 +10,7 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Engineer.Helper;
+using Engineer.Decorators;
 
 namespace Engineer.Controllers
 {
@@ -18,6 +19,14 @@ namespace Engineer.Controllers
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class ChangePassword
+    {
+        public string UserId { get; set; } = string.Empty;
+        public int Code { get; set; }
+        public string Password { get; set; } = string.Empty;
+        public string ConformPaaword { get; set; } = string.Empty;
     }
 
     public class UserRequestHdneler
@@ -42,6 +51,12 @@ namespace Engineer.Controllers
         public DateTime BlackListDate { get; set; } = DateTime.Now;
     }
 
+    public class DeadLockSelf
+    {
+        public string Token { get; set; }
+        public int action { get; set; }
+    }
+
 
     [Produces("application/json")]
     [ApiController]
@@ -50,6 +65,8 @@ namespace Engineer.Controllers
     public class ItemController : ControllerBase
     {
         private AuthDbContext _context;
+        private string businessEmail = "aavash3150@gmail.com";
+        private string businessEmailAppPassword = "";
         public ItemController(AuthDbContext context)
         {
             this._context = context;
@@ -62,6 +79,14 @@ namespace Engineer.Controllers
                 passwordSalt = hmac.Key;
                 passowrdHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
             }
+        }
+
+        [HttpPost]
+        [Route("ValidateCsrfTest")]
+        [CSRF]
+        public IActionResult TestC() {
+            var headers = Request.Headers;
+            return new JsonResult(Ok());
         }
 
         [HttpPost]
@@ -105,6 +130,8 @@ namespace Engineer.Controllers
                 JoinedDate = DateTime.Now,
                 RefreshToken = string.Empty,
                 SuperUser = false,
+                LockToken = "",
+                Locked = false
             };
 
             var res = new UserResponseRegister()
@@ -114,23 +141,30 @@ namespace Engineer.Controllers
 
             await _context.Users.AddAsync(newUser);
             await _context.SaveChangesAsync();
+            string emailBody = $"Hi we would like to comform your login your code is: {code}";
+            string EmailSub = "Email verification";
+            string toSendEmail = model.Email;
 
+            SendEmail(emailBody, EmailSub, toSendEmail);
+            return new JsonResult(Ok(res));
+        }
 
+        private void SendEmail(string body, string Subject, string UserEmail)
+        {
             var email = new MimeMessage();
-            email.From.Add(MailboxAddress.Parse("aavash3150@gmail.com"));
-            email.To.Add(MailboxAddress.Parse(model.Email));
-            email.Subject = "Email verification";
+            email.From.Add(MailboxAddress.Parse(businessEmail));
+            email.To.Add(MailboxAddress.Parse(UserEmail));
+            email.Subject = Subject;
             email.Body = new TextPart(TextFormat.Html)
             {
-                Text = $"Hi we would like to comform your login your code is: {code}"
+                Text = body
             };
 
             using var smtp = new SmtpClient();
             smtp.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-            smtp.Authenticate("aavash3150@gmail.com", "");
+            smtp.Authenticate(businessEmail, businessEmailAppPassword);
             smtp.Send(email);
             smtp.Disconnect(true);
-            return new JsonResult(Ok(res));
         }
 
         [HttpPost]
@@ -163,11 +197,13 @@ namespace Engineer.Controllers
                 return new JsonResult(BadRequest("Username or password is incorrect"));
             }
 
-            string assignJwt = CreateToken(user);
+
+            List<Claim> claims = NormClaims(user);
+
+            string assignJwt = CreateToken(user, claims);
             // random token with assign and expirey date
             var refreshToken = GenerateToken();
             // assign token to http only cookie and save it in user record
-            Console.WriteLine("ASSIGNED TOKEN " + refreshToken);
             AssignHttpOnlyCookie(refreshToken, out RefreshToken RefreshTokenInfo);
             user.RefreshToken = RefreshTokenInfo.Token;
             user.DateCreated = RefreshTokenInfo.Date;
@@ -177,13 +213,19 @@ namespace Engineer.Controllers
             return new JsonResult(Ok(assignJwt));
         }
 
-        private string CreateToken(User user)
+        private List<Claim> NormClaims(User user)
         {
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, "normal client")
             };
+
+            return claims;
+        }
+
+        private string CreateToken(User user, List<Claim> claims)
+        {
             byte[] secretKey = System.Text.Encoding.UTF8.GetBytes("my top secret key");
             var key = new SymmetricSecurityKey(secretKey);
 
@@ -287,10 +329,39 @@ namespace Engineer.Controllers
 
         [HttpGet]
         [Route("check")]
-        public async Task<IActionResult> CheckToken()
+        public IActionResult CheckToken()
         {
-            Tool.ValidateJWT(Request.Headers["Authorization"], out bool status);
+            Tool.ValidateJWT(Request.Headers["Authorization"], out bool status, out string role);
             return new JsonResult(Ok(status));
+        }
+
+        [HttpGet]
+        [Route("adminCheck")]
+        public IActionResult CheckAdmin()
+        {
+            // Date and secrect key relataed validataion    
+            try
+            {
+                Tool.ValidateJWT(Request.Headers["Authorization"], out bool status, out string role);
+                if (status == true)
+                {
+                    // if the role is of admin
+                    var info = new Dictionary<string, string>(){
+                {"Role", role},
+
+            };
+                    if (role == "adminstration")
+                    {
+                        return new JsonResult(info);
+                    }
+                }
+            }
+            catch
+            {
+
+                return new JsonResult(BadRequest());
+            }
+            return new JsonResult(BadRequest());
         }
 
         [HttpGet]
@@ -311,8 +382,13 @@ namespace Engineer.Controllers
             {
                 return Ok();
             }
+            List<Claim> TokenClaimns = NormClaims(User);
 
-            string accessToken = CreateToken(User);
+            if (User.SuperUser == true)
+            {
+                TokenClaimns = SuperClaims(User);
+            }
+            string accessToken = CreateToken(User, TokenClaimns);
             var newRefreshToken = GenerateToken();
             User.RefreshToken = newRefreshToken.Token;
             User.DateCreated = newRefreshToken.Date;
@@ -329,8 +405,25 @@ namespace Engineer.Controllers
             return Ok();
         }
 
+        private List<Claim> SuperClaims(User user)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, "adminstration"),
+            };
 
-        // admin login portal 
+            return claims;
+        }
+
+        // # login interval of 2 minutes (brute force attack prevention)
+        // # super user check on the database
+        // # cookie lifespan is about 5 minutes
+        // # refreh token lifespan 30 minutes
+        // # if user from email declines it was not me then block login attemt with password reset 
+
+
+
         [HttpPost]
         [Route("AdminLoginPortal")]
         public async Task<IActionResult> AdminPortalLogin(Login cred)
@@ -340,31 +433,90 @@ namespace Engineer.Controllers
             var user = _context.Users.Where(x => x.Username == Username).FirstOrDefault();
             if (user == null)
             {
-                return new JsonResult(BadRequest("Problem with DNS server"));
+                return new JsonResult(BadRequest("403"));
             }
-            if (user.IsActive == false)
-            {
-                return BadRequest("You're not verified");
-            }
+            // if (user.IsActive == false)
+            // {
+            //     return BadRequest("Newtwork error");
+            // }
             if (user.SuperUser == true)
             {
                 bool isAuthenticated = Authenticate(Password, user.Password, user.Salt);
-                if (isAuthenticated == false)
+
+                if (isAuthenticated == true)
                 {
-                    return new JsonResult(BadRequest("Problem with DNS server"));
+                    string clientDomain = Tool.ClientDomain();
+                    string antiTokenCollision = Convert.ToBase64String(user.Salt);
+                    string LockToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(128)) + antiTokenCollision;
+                    user.LockToken = LockToken;
+                    user.IsActive = false;
+                    await _context.SaveChangesAsync();
+                    string body = $"Please conform your identity " +
+                   $"Check activity at {clientDomain}/secureAccount/?promptCode={LockToken}&userId={user.Username}";
+                    string subject = "someone trying to access your adminstration account";
+                    SendEmail(body, subject, user.Email);
+                    // Lock 
+                    return new JsonResult(Ok(isAuthenticated));
                 }
-                string assignJwt = CreateToken(user);
-                // random token with assign and expirey date
-                var refreshToken = GenerateToken();
-                // assign token to http only cookie and save it in user record
-                AssignHttpOnlyCookie(refreshToken, out RefreshToken RefreshTokenInfo);
-                user.RefreshToken = RefreshTokenInfo.Token;
-                user.DateCreated = RefreshTokenInfo.Date;
-                user.DateExpires = RefreshTokenInfo.BlackListDate;
-                await _context.SaveChangesAsync();
-                return new JsonResult(Ok(assignJwt));
+                return new JsonResult(BadRequest("Incorrect username or password"));
             }
-            return new JsonResult(BadRequest("Newwork error"));
+            return new JsonResult(BadRequest());
+        }
+
+        // if I want to change password
+        [HttpPost]
+        [Route("ChangePasswordRequest")]
+        public async Task<IActionResult> ChangePasswordRequest(ReactivateClass Credentials)
+        {
+            var User = _context.Users.Where(x => x.Username == Credentials.Username &&
+            x.LockToken == Credentials.Token).FirstOrDefault();
+            if (User == null) return new JsonResult(BadRequest());
+            string Subject = "Password reset mail";
+            Random module = new Random();
+            int code = module.Next(1000, 9999);
+            User.OnTimePassword = code;
+            await _context.SaveChangesAsync();
+            string Body = $"Hi to reset your password your code is {User.OnTimePassword}";
+            SendEmail(Body, Subject, User.Email);
+            return new JsonResult(Ok());
+        }
+
+        [HttpPost]
+        [Route("ChangePassword")]
+        public async Task<IActionResult> ChangePassword(ResetPasswordModel model)
+        {
+            var user = _context.Users.Where(x => x.Username == model.Username &&
+            x.LockToken == model.LockToken && x.OnTimePassword == model.Code).FirstOrDefault();
+            if (user == null) return new JsonResult(BadRequest("Invalid code"));
+            Validator(model.Password, out bool status, out List<string> message);
+            if (status == false) return new JsonResult(BadRequest(message));
+            HashingAlgorithm(model.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            user.Password = passwordHash;
+            user.Salt = passwordSalt;
+            user.IsActive = true;
+            user.LockToken = "";
+            await _context.SaveChangesAsync();
+            return new JsonResult(Ok());
+        }
+
+        [HttpPost]
+        [Route("AuthenticLogin")]
+        public async Task<IActionResult> LgoinAuth(ReactivateClass cred)
+        {
+            var user = _context.Users.Where(x => x.Username == cred.Username && x.LockToken == cred.Token).FirstOrDefault();
+            if (user == null) return new JsonResult(BadRequest("User does not exists"));
+            user.IsActive = true;
+
+            List<Claim> claims = SuperClaims(user);
+            string assignJwt = CreateToken(user, claims);
+            var refreshToken = GenerateToken();
+            AssignHttpOnlyCookie(refreshToken, out RefreshToken RefreshTokenInfo);
+            user.RefreshToken = RefreshTokenInfo.Token;
+            user.DateCreated = RefreshTokenInfo.Date;
+            user.DateExpires = RefreshTokenInfo.BlackListDate;
+
+            await _context.SaveChangesAsync();
+            return new JsonResult(Ok(assignJwt));
         }
     }
 }

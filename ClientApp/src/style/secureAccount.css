@@ -1,0 +1,29 @@
+.centerFrame{
+    width: 50%;
+    height: 300px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    user-select: none;
+}
+
+.confromButton{
+    width: 25%;
+    margin-left: 5px;
+}
+#accountLocked {
+    float: left;
+    margin-left: 5px;
+}
+.changePassword{
+    float: left;
+    width: 80%;
+    margin-left: 5px;
+    margin-top: 5px;
+}
+.button1{
+    width: 20%;
+    margin-left: 5px;
+    margin-top: 30px;
+}
+.form_align{
+    width: 80%;
+}

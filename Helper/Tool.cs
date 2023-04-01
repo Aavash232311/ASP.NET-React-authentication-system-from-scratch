@@ -1,11 +1,18 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 namespace Engineer.Helper
 {
     public static class Tool
     {
-        public static void ValidateJWT(string? token, out bool status)
+        public static string ClientDomain()
+        {
+            return "https://localhost:44461";
+        }
+
+
+        public static void ValidateJWT(string? token, out bool status, out string role)
         {
             string? JwtToken = null;
             if (token == null)
@@ -28,10 +35,18 @@ namespace Engineer.Helper
                     }
                 }
             }
+
+            string ClientRole = "";
+
             if (JwtToken != null)
             {
                 byte[] secretKey = System.Text.Encoding.UTF8.GetBytes("my top secret key");
                 var tokenHandler = new JwtSecurityTokenHandler();
+                var data = tokenHandler.ReadJwtToken(JwtToken);
+
+                IEnumerable<Claim> claims = data.Claims;
+                string singleRole = claims.First(claim => claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Value;
+                ClientRole = singleRole;
                 try
                 {
                     tokenHandler.ValidateToken(JwtToken, new TokenValidationParameters
@@ -53,6 +68,16 @@ namespace Engineer.Helper
             {
                 status = false;
             }
+            if (ClientRole != "")
+            {
+                role = ClientRole;
+            }
+            else
+            {
+                role = "";
+            }
         }
+
+
     }
 }

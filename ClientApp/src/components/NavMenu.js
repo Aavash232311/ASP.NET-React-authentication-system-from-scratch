@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import {
   Collapse,
   Navbar,
@@ -19,8 +19,9 @@ export class NavMenu extends Component {
     this.toggleNavbar = this.toggleNavbar.bind(this);
     this.state = {
       collapsed: true,
-      user: false,
+      ifUser: null,
     };
+    this.infiniteLoopPrevention = [];
   }
 
   toggleNavbar() {
@@ -34,10 +35,9 @@ export class NavMenu extends Component {
       <AuthProvider>
         <AuthContext.Consumer>
           {(value) => {
-            let user = false;
-            if (value.user !== null){
-              user = true;
-            }
+            const usr = value.user;
+
+
             return (
               <header>
                 <Navbar
@@ -66,7 +66,7 @@ export class NavMenu extends Component {
                         </NavLink>
                       </NavItem>
 
-                      <div style={{ display: user ? "none" : "block" }}>
+                      <div style={{ display: value.absUser ? "none" : "block" }}>
                         <NavItem>
                           <NavLink
                             tag={Link}
@@ -83,7 +83,7 @@ export class NavMenu extends Component {
                         </NavItem>
                       </div>
 
-                      <div style={{ display:  user ? "block" : "none" }}>
+                      <div style={{ display:  value.absUser ? "block" : "none" }}>
                         <NavItem onClick={value.logOut}>
                           <NavLink tag={Link} className="text-dark" to="/login">
                             Logout

@@ -22,7 +22,7 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 
 builder.Services.AddAntiforgery(options =>
 {
-    // Set Cookie properties using CookieBuilder properties�.
+      // Set Cookie properties using CookieBuilder properties .
     options.FormFieldName = "AntiforgeryFieldname";
     options.HeaderName = "X-XSRF-TOKEN";
     options.SuppressXFrameOptionsHeader = false;
@@ -32,15 +32,13 @@ builder.Services.AddAntiforgery(options =>
 // Cross Origion Resources Sharing bypass for react js 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CORSAllowLocalHost3000",
-      builder =>
-      builder.WithOrigins("https://localhost:44461")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()
-     );
+    options.AddPolicy("CorsPolicy",
+        builder => builder
+            .WithOrigins("https://localhost:44461") //Note:  The URL must be specified without a trailing slash (/).
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
 });
-
 
 builder.Services.AddControllers(options =>
 {
@@ -91,13 +89,19 @@ var antiforgery = app.Services.GetRequiredService<IAntiforgery>();
 
 app.Use((context, next) =>
 {
-    var requestPath = context.Request.Path.Value;
+     if (HttpMethods.IsGet(context.Request.Method))
+    {
+        // Generate and store a new CSRF token in the cookie for GET requests
+        var requestPath = context.Request.Path.Value;
         var tokenSet = antiforgery.GetAndStoreTokens(context);
         context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!,
             new CookieOptions {HttpOnly = false ,
                             Secure=false,
                             IsEssential=true,
                             SameSite=SameSiteMode.Strict });
+
+    return next(context);
+    }
 
     return next(context);
 });
@@ -113,7 +117,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors("CORSAllowLocalHost3000");
+app.UseCors("CorsPolicy");
 
 app.UseDefaultFiles();
 

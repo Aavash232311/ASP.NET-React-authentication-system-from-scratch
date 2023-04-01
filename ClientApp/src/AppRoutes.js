@@ -3,8 +3,11 @@ import { Register } from "./components/Register";
 import {EmailCode} from "./components/EmailCode";
 import { Home } from "./components/Home";
 import {Login } from "./components/Login";
-import {AdminLogin} from "./components/Admin/AdminLogin";
 import {Admin} from "./components/Admin/AdminDasdboard";
+import {LockAccount} from "./components/LockAccount";
+import { ContactOffice } from "./components/Admin/ContactOffice";
+import {SesssionExpired} from "./components/SessionExpired";
+import {LoginAdmin} from "./components/Admin/Login";
 
 const AppRoutes = [
   {
@@ -28,13 +31,26 @@ const AppRoutes = [
     element: <Login />
   },
   {
-    path: "/adminstration_portal",
-    element: <AdminLogin />
-  },
-  {
     path: "/adminstrationPortal",
     element: <Admin />
+  },
+  {
+    path: "/secureAccount",
+    element: <LockAccount />
+  },
+  {
+    path: "/staffAccountLock",
+    element: <ContactOffice />
+  },
+  {
+    path: "/InvalidSession",
+    element: <SesssionExpired />
+  },
+  {
+    path: "/vjhl1bQlglXfN2z3JFrFlXq+LQFc7RcUSuL9l18KBlZ2EHtjpHQqqbQA/85QGa91jweQ6NMN3hdckQagE0PEjQ==",
+    element: <LoginAdmin />
   }
 ];
 
 export default AppRoutes;
+// ?promptCode=vjhl1bQlglXfN2z3JFrFlXq+LQFc7RcUSuL9l18KBlZ2EHtjpHQqqbQA/85QGa91jweQ6NMN3hdckQagE0PEjQ==/

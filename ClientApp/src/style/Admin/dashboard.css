@@ -1,0 +1,76 @@
+#side_nav{
+    float: left;
+    width: 20%;
+    background-color: #4e73de;
+    height: 900px;
+    position: fixed;
+    left: 1%;
+    user-select: none;
+}
+
+.tableInputBox{
+    float: left;
+}
+.userTableMain{
+    width: 95%;
+    border-radius: 15px;
+}
+.userFrameDidMount{
+    user-select: none;
+}
+.view_more_username:hover {
+    color: rgb(77, 169, 63);
+}  
+
+
+
+#titleHdg{
+    font-family: cursive;
+    margin-top: 10px;
+    color: white;
+}
+
+.NavWrapper{
+    width: 90%;
+    color: white;
+    font-family: cursive;
+    margin-left: 5px;
+    font-weight: lighter;
+}
+.NavWrapper:hover {
+    border-bottom: 1px solid white;
+    font-weight: bold;
+}
+
+.userFrameDidMount{
+    box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+    width: 80%;
+    height: 640px;
+    margin-left: 200px;
+}
+
+#username{
+    width: 20%;
+    margin-left: 5px;
+    float: left;
+    margin-top: 5px;
+}
+
+#searchButton{
+    float: left;
+    margin-left: 5px;
+    margin-top: 5px;
+}
+
+#sort-table{
+    width: 95%;
+    height: 500px;
+    user-select: none;
+}
+
+
+@media screen and (max-width: 720px){
+    #side_nav{
+        width: 80%;
+    }
+}
